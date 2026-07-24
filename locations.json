@@ -1,0 +1,17 @@
+{
+  "1000": {
+    "campus": "West",
+    "building": "Rosenberg",
+    "or": "12"
+  },
+  "1001": {
+    "campus": "West",
+    "building": "Rosenberg",
+    "or": "5"
+  },
+  "2001": {
+    "campus": "East",
+    "building": "Shapiro",
+    "or": "8"
+  }
+}
