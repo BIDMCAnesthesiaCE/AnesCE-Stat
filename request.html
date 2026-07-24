@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Anesthesia Equipment Support Request</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 24px;
+      background: #f3f4f6; color: #1f2937;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    main { width: 100%; max-width: 520px; margin: 0 auto; }
+    .panel {
+      padding: 24px; background: #fff; border: 1px solid #d1d5db;
+      border-radius: 18px;
+    }
+    .system-banner {
+      margin-bottom: 20px; padding: 10px; background: #e0f2fe;
+      color: #075985; border-radius: 8px; text-align: center;
+      font-weight: bold; line-height: 1.4;
+    }
+    .version { display: block; margin-top: 2px; font-size: 12px; font-weight: normal; }
+    h1 { margin: 0; text-align: center; font-size: 26px; }
+    .subtitle {
+      margin: 8px 0 24px; color: #4b5563; text-align: center; line-height: 1.5;
+    }
+    .location {
+      margin-bottom: 24px; padding: 18px; background: #f3f4f6;
+      border-radius: 12px; text-align: center; line-height: 1.5;
+    }
+    .room-name { font-size: 28px; font-weight: bold; }
+    .location-detail { margin-top: 6px; color: #4b5563; font-size: 17px; }
+    .loading {
+      margin-top: 20px; padding: 24px 18px; background: #eff6ff;
+      color: #1e3a8a; border-radius: 12px; text-align: center;
+      font-weight: bold; line-height: 1.6;
+    }
+    .spinner {
+      width: 44px; height: 44px; margin: 0 auto 14px;
+      border: 5px solid #bfdbfe; border-top-color: #1d4ed8;
+      border-radius: 50%; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-error {
+      display: none; margin-top: 20px; padding: 20px;
+      background: #fee2e2; color: #991b1b; border-radius: 12px;
+      text-align: center; font-weight: bold; line-height: 1.5;
+    }
+    .open-button {
+      display: none; width: 100%; min-height: 58px; margin-top: 14px;
+      padding: 12px; border: 0; border-radius: 16px; background: #1d4ed8;
+      color: #fff; font-size: 18px; font-weight: bold; cursor: pointer;
+    }
+    .open-button:active { transform: scale(.98); }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <div class="system-banner">
+        Anesthesia Equipment Support
+        <span class="version">Routine Request Prototype</span>
+      </div>
+      <h1>Equipment Support Request</h1>
+      <p class="subtitle">Loading the location associated with this QR code.</p>
+
+      <div class="location" id="location" hidden>
+        <div class="room-name" id="roomName"></div>
+        <div class="location-detail" id="locationDetail"></div>
+      </div>
+
+      <div class="loading" id="loading" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        Opening request form...
+      </div>
+
+      <div class="status-error" id="errorMessage" aria-live="polite"></div>
+
+      <button class="open-button" id="openButton" type="button">
+        OPEN REQUEST FORM
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const FORM_URL =
+      "https://docs.google.com/forms/d/e/" +
+      "1FAIpQLSc3xB0_3F4SH5UUAz_hNGPWyjywsfxwwtRk2X1cltabgL_28w/" +
+      "viewform";
+
+    const FIELD_IDS = {
+      qrId: "entry.163320389",
+      campus: "entry.1779710860",
+      building: "entry.1436198172",
+      operatingRoom: "entry.455553375"
+    };
+
+    const parameters = new URLSearchParams(window.location.search);
+    const qrId = parameters.get("id");
+
+    const locationBox = document.getElementById("location");
+    const roomName = document.getElementById("roomName");
+    const locationDetail = document.getElementById("locationDetail");
+    const loading = document.getElementById("loading");
+    const errorMessage = document.getElementById("errorMessage");
+    const openButton = document.getElementById("openButton");
+
+    let destinationUrl = "";
+
+    async function start() {
+      try {
+        if (!qrId) throw new Error("No location ID was included in this QR code.");
+
+        const response = await fetch("./locations.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("The location list could not be loaded.");
+
+        const locations = await response.json();
+        const room = locations[qrId];
+
+        if (!room) throw new Error(`Location ID ${qrId} was not found.`);
+        if (!room.campus || !room.building || !room.or) {
+          throw new Error(`Location ID ${qrId} is missing required information.`);
+        }
+
+        roomName.textContent = formatOperatingRoom(room.or);
+        locationDetail.textContent = `${room.campus} Campus • ${room.building}`;
+        locationBox.hidden = false;
+
+        const formParameters = new URLSearchParams({
+          usp: "pp_url",
+          [FIELD_IDS.qrId]: qrId,
+          [FIELD_IDS.campus]: room.campus,
+          [FIELD_IDS.building]: room.building,
+          [FIELD_IDS.operatingRoom]: room.or
+        });
+
+        destinationUrl = `${FORM_URL}?${formParameters.toString()}`;
+
+        openButton.style.display = "block";
+        openButton.addEventListener("click", openForm);
+        window.setTimeout(openForm, 1200);
+      } catch (error) {
+        console.error("Routine request redirect error:", error);
+        loading.style.display = "none";
+        errorMessage.textContent =
+          `${error.message} Please scan the QR code again or contact ` +
+          `Anesthesia Clinical Engineering.`;
+        errorMessage.style.display = "block";
+      }
+    }
+
+    function openForm() {
+      if (destinationUrl) window.location.assign(destinationUrl);
+    }
+
+    function formatOperatingRoom(value) {
+      const text = String(value).trim();
+      return /^or\b/i.test(text) ? text : `OR ${text}`;
+    }
+
+    start();
+  </script>
+</body>
+</html>
