@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <title>Anesthesia Equipment Support</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background: #f3f4f6;
+      color: #1f2937;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      padding: 24px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 18px;
+    }
+
+    .prototype {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #fff4ce;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 26px;
+    }
+
+    .subtitle {
+      margin: 8px 0 24px;
+      color: #4b5563;
+      text-align: center;
+    }
+
+    .equipment {
+      margin-bottom: 24px;
+      padding: 18px;
+      background: #f3f4f6;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .or-name {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .machine {
+      margin-top: 8px;
+      color: #4b5563;
+      font-size: 17px;
+    }
+
+    .stat-button {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      border: 0;
+      border-radius: 16px;
+      background: #b42318;
+      color: #ffffff;
+      font-size: 29px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .stat-button:active {
+      transform: scale(0.98);
+    }
+
+    .stat-button:disabled {
+      background: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .instructions {
+      margin: 16px 0 0;
+      color: #4b5563;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .status {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <section class="panel">
+      <div class="prototype">
+        PROTOTYPE — NO ALERT WILL BE SENT
+      </div>
+
+      <h1>Anesthesia Equipment Support</h1>
+
+      <p class="subtitle">
+        Request immediate equipment assistance
+      </p>
+
+      <div class="equipment">
+        <div class="or-name" id="orName">Test OR</div>
+
+        <div class="machine" id="machineInfo">
+          Anesthesia Machine
+        </div>
+      </div>
+
+      <button
+        class="stat-button"
+        id="statButton"
+        type="button"
+      >
+        🚨 SEND STAT
+      </button>
+
+      <p class="instructions">
+        Press only when immediate anesthesia equipment support is required.
+      </p>
+
+      <div class="status" id="status" aria-live="polite">
+        Test successful. The STAT button was pressed.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const parameters = new URLSearchParams(window.location.search);
+
+    const operatingRoom =
+      parameters.get("or") || "Test OR";
+
+    const machine =
+      parameters.get("machine") || "Anesthesia Machine";
+
+    const asset =
+      parameters.get("asset") || "";
+
+    document.getElementById("orName").textContent = operatingRoom;
+
+    document.getElementById("machineInfo").textContent =
+      asset ? `${machine} • ${asset}` : machine;
+
+    const statButton = document.getElementById("statButton");
+    const status = document.getElementById("status");
+
+    statButton.addEventListener("click", () => {
+      statButton.disabled = true;
+      statButton.textContent = "STAT BUTTON PRESSED";
+      status.style.display = "block";
+    });
+  </script>
+</body>
+</html>
+Create prototype STAT page
