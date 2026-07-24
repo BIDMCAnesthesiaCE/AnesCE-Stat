@@ -37,13 +37,22 @@
       border-radius: 18px;
     }
 
-    .prototype {
+    .system-banner {
       margin-bottom: 20px;
       padding: 10px;
-      background: #fff4ce;
+      background: #e0f2fe;
+      color: #075985;
       border-radius: 8px;
       text-align: center;
       font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .version {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: normal;
     }
 
     h1 {
@@ -148,10 +157,38 @@
       line-height: 1.5;
     }
 
+    .loading {
+      display: none;
+      margin-top: 20px;
+      padding: 24px 18px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+      line-height: 1.6;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 14px;
+      border: 5px solid #bfdbfe;
+      border-top-color: #1d4ed8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .status {
       display: none;
       margin-top: 20px;
-      padding: 18px;
+      padding: 20px;
       border-radius: 12px;
       text-align: center;
       font-weight: bold;
@@ -168,11 +205,25 @@
       color: #991b1b;
     }
 
+    .success-icon {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 38px;
+    }
+
     .request-id {
       display: block;
-      margin-top: 8px;
-      font-size: 14px;
+      margin-top: 12px;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .success-instruction {
+      display: block;
+      margin-top: 14px;
+      font-size: 15px;
       font-weight: normal;
+      line-height: 1.5;
     }
 
     .reset-button {
@@ -190,8 +241,9 @@
 <body>
   <main>
     <section class="panel">
-      <div class="prototype">
-        PROTOTYPE SYSTEM
+      <div class="system-banner">
+        Anesthesia Equipment Support
+        <span class="version">Prototype Version 0.2</span>
       </div>
 
       <h1>Anesthesia Equipment Support</h1>
@@ -256,6 +308,17 @@
       </p>
 
       <div
+        class="loading"
+        id="loading"
+        aria-live="polite"
+      >
+        <div class="spinner" aria-hidden="true"></div>
+        Sending STAT request...
+        <br>
+        Please wait.
+      </div>
+
+      <div
         class="status"
         id="status"
         aria-live="polite"
@@ -311,6 +374,9 @@
     const instructions =
       document.getElementById("instructions");
 
+    const loading =
+      document.getElementById("loading");
+
     const status =
       document.getElementById("status");
 
@@ -348,7 +414,25 @@
     async function sendStatRequest() {
       confirmButton.disabled = true;
       cancelButton.disabled = true;
-      confirmButton.textContent = "SENDING...";
+
+      confirmation.style.display = "none";
+      loading.style.display = "block";
+
+      const submittedDate = new Date();
+
+      const localTimestamp = submittedDate.toLocaleString(
+        "en-US",
+        {
+          timeZone: "America/New_York",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZoneName: "short"
+        }
+      );
 
       try {
         const response = await fetch(BACKEND_URL, {
@@ -360,7 +444,8 @@
             location: operatingRoom,
             machine: machine,
             asset: asset,
-            priority: "STAT"
+            priority: "STAT",
+            localTimestamp: localTimestamp
           })
         });
 
@@ -372,22 +457,29 @@
           );
         }
 
-        confirmation.style.display = "none";
+        loading.style.display = "none";
 
         status.className = "status status-success";
         status.innerHTML = `
-          STAT request sent successfully.
+          <span class="success-icon">✓</span>
+          STAT request sent
           <span class="request-id">
             Request ID: ${escapeHtml(result.requestId)}
           </span>
+          <span class="success-instruction">
+            Please remain at the equipment.
+            <br>
+            A technician has been notified.
+          </span>
         `;
+
         status.style.display = "block";
         resetButton.style.display = "block";
         resetButton.focus();
       } catch (error) {
         console.error("STAT request error:", error);
 
-        confirmation.style.display = "none";
+        loading.style.display = "none";
 
         status.className = "status status-error";
         status.innerHTML = `
@@ -395,17 +487,18 @@
           <br>
           Please call Anesthesia Equipment Support directly.
         `;
+
         status.style.display = "block";
         resetButton.style.display = "block";
         resetButton.focus();
       } finally {
         confirmButton.disabled = false;
         cancelButton.disabled = false;
-        confirmButton.textContent = "YES — SEND STAT";
       }
     }
 
     function resetPage() {
+      loading.style.display = "none";
       status.style.display = "none";
       resetButton.style.display = "none";
       confirmation.style.display = "none";
@@ -425,4 +518,3 @@
   </script>
 </body>
 </html>
-Connect STAT page to Cloudflare Worker
