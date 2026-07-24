@@ -11,9 +11,7 @@
   <title>Anesthesia Equipment Support</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -65,14 +63,16 @@
       margin: 8px 0 24px;
       color: #4b5563;
       text-align: center;
+      line-height: 1.5;
     }
 
-    .equipment {
+    .location {
       margin-bottom: 24px;
       padding: 18px;
       background: #f3f4f6;
       border-radius: 12px;
       text-align: center;
+      line-height: 1.5;
     }
 
     .or-name {
@@ -80,10 +80,15 @@
       font-weight: bold;
     }
 
-    .machine {
-      margin-top: 8px;
+    .location-detail {
+      margin-top: 6px;
       color: #4b5563;
       font-size: 17px;
+    }
+
+    .button-stack {
+      display: grid;
+      gap: 14px;
     }
 
     button {
@@ -104,11 +109,27 @@
     }
 
     .stat-button {
-      min-height: 120px;
+      min-height: 112px;
       padding: 16px;
       background: #b42318;
       color: #ffffff;
-      font-size: 29px;
+      font-size: 28px;
+    }
+
+    .routine-button {
+      min-height: 84px;
+      padding: 16px;
+      background: #1d4ed8;
+      color: #ffffff;
+      font-size: 22px;
+    }
+
+    .button-note {
+      display: block;
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: normal;
+      line-height: 1.35;
     }
 
     .confirmation {
@@ -140,7 +161,8 @@
       font-size: 24px;
     }
 
-    .cancel-button {
+    .cancel-button,
+    .reset-button {
       min-height: 58px;
       margin-top: 12px;
       padding: 12px;
@@ -180,9 +202,7 @@
     }
 
     @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
     }
 
     .status {
@@ -228,12 +248,17 @@
 
     .reset-button {
       display: none;
-      min-height: 58px;
-      margin-top: 14px;
-      padding: 12px;
-      background: #e5e7eb;
-      color: #1f2937;
-      font-size: 18px;
+    }
+
+    .page-error {
+      display: none;
+      padding: 20px;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -243,30 +268,37 @@
     <section class="panel">
       <div class="system-banner">
         Anesthesia Equipment Support
-        <span class="version">Prototype Version 0.2</span>
+        <span class="version">Prototype Version 0.3</span>
       </div>
 
       <h1>Anesthesia Equipment Support</h1>
 
       <p class="subtitle">
-        Request immediate equipment assistance
+        Select the type of assistance needed.
       </p>
 
-      <div class="equipment">
-        <div class="or-name" id="orName">Test OR</div>
-
-        <div class="machine" id="machineInfo">
-          Anesthesia Machine
-        </div>
+      <div class="location" id="location" hidden>
+        <div class="or-name" id="orName"></div>
+        <div class="location-detail" id="locationDetail"></div>
       </div>
 
-      <button
-        class="stat-button"
-        id="statButton"
-        type="button"
-      >
-        🚨 SEND STAT
-      </button>
+      <div class="page-error" id="pageError"></div>
+
+      <div class="button-stack" id="buttonStack" hidden>
+        <button class="stat-button" id="statButton" type="button">
+          🚨 SEND STAT
+          <span class="button-note">
+            Immediate assistance for an active case
+          </span>
+        </button>
+
+        <button class="routine-button" id="routineButton" type="button">
+          SUBMIT EQUIPMENT REQUEST
+          <span class="button-note">
+            Non-urgent equipment problem or follow-up
+          </span>
+        </button>
+      </div>
 
       <div
         class="confirmation"
@@ -275,60 +307,37 @@
         aria-labelledby="confirmationTitle"
         aria-modal="true"
       >
-        <h2 id="confirmationTitle">
-          Confirm STAT Request
-        </h2>
+        <h2 id="confirmationTitle">Confirm STAT Request</h2>
 
         <p class="confirmation-text">
           Send an immediate anesthesia equipment support request for
-          <strong id="confirmationLocation">
-            this location
-          </strong>?
+          <strong id="confirmationLocation">this location</strong>?
         </p>
 
-        <button
-          class="confirm-button"
-          id="confirmButton"
-          type="button"
-        >
+        <button class="confirm-button" id="confirmButton" type="button">
           YES — SEND STAT
         </button>
 
-        <button
-          class="cancel-button"
-          id="cancelButton"
-          type="button"
-        >
+        <button class="cancel-button" id="cancelButton" type="button">
           CANCEL
         </button>
       </div>
 
-      <p class="instructions" id="instructions">
-        Press only when immediate anesthesia equipment support is required.
+      <p class="instructions" id="instructions" hidden>
+        Use STAT only when immediate assistance is required.
+        Routine requests open the equipment support form.
       </p>
 
-      <div
-        class="loading"
-        id="loading"
-        aria-live="polite"
-      >
+      <div class="loading" id="loading" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
         Sending STAT request...
         <br>
         Please wait.
       </div>
 
-      <div
-        class="status"
-        id="status"
-        aria-live="polite"
-      ></div>
+      <div class="status" id="status" aria-live="polite"></div>
 
-      <button
-        class="reset-button"
-        id="resetButton"
-        type="button"
-      >
+      <button class="reset-button" id="resetButton" type="button">
         RETURN
       </button>
     </section>
@@ -338,77 +347,127 @@
     const BACKEND_URL =
       "https://anesce-stat-api.rbarker2.workers.dev/";
 
-    const parameters =
-      new URLSearchParams(window.location.search);
+    const FORM_URL =
+      "https://docs.google.com/forms/d/e/" +
+      "1FAIpQLSc3xB0_3F4SH5UUAz_hNGPWyjywsfxwwtRk2X1cltabgL_28w/" +
+      "viewform";
 
-    const operatingRoom =
-      parameters.get("or") || "Test OR";
+    const FIELD_IDS = {
+      qrId: "entry.163320389",
+      campus: "entry.1779710860",
+      building: "entry.1436198172",
+      operatingRoom: "entry.455553375"
+    };
 
-    const machine =
-      parameters.get("machine") || "Anesthesia Machine";
+    const parameters = new URLSearchParams(window.location.search);
+    const qrId = parameters.get("id");
 
-    const asset =
-      parameters.get("asset") || "";
-
-    const orName =
-      document.getElementById("orName");
-
-    const machineInfo =
-      document.getElementById("machineInfo");
-
-    const statButton =
-      document.getElementById("statButton");
-
-    const confirmation =
-      document.getElementById("confirmation");
-
+    const locationBox = document.getElementById("location");
+    const orName = document.getElementById("orName");
+    const locationDetail = document.getElementById("locationDetail");
+    const pageError = document.getElementById("pageError");
+    const buttonStack = document.getElementById("buttonStack");
+    const statButton = document.getElementById("statButton");
+    const routineButton = document.getElementById("routineButton");
+    const confirmation = document.getElementById("confirmation");
     const confirmationLocation =
       document.getElementById("confirmationLocation");
+    const confirmButton = document.getElementById("confirmButton");
+    const cancelButton = document.getElementById("cancelButton");
+    const instructions = document.getElementById("instructions");
+    const loading = document.getElementById("loading");
+    const status = document.getElementById("status");
+    const resetButton = document.getElementById("resetButton");
 
-    const confirmButton =
-      document.getElementById("confirmButton");
+    let currentLocation = null;
+    let routineFormUrl = "";
 
-    const cancelButton =
-      document.getElementById("cancelButton");
+    async function initializePage() {
+      try {
+        if (!qrId) {
+          throw new Error("No location ID was included in this QR code.");
+        }
 
-    const instructions =
-      document.getElementById("instructions");
+        const response = await fetch("./locations.json", {
+          cache: "no-store"
+        });
 
-    const loading =
-      document.getElementById("loading");
+        if (!response.ok) {
+          throw new Error("The location list could not be loaded.");
+        }
 
-    const status =
-      document.getElementById("status");
+        const locations = await response.json();
+        currentLocation = locations[qrId];
 
-    const resetButton =
-      document.getElementById("resetButton");
+        if (!currentLocation) {
+          throw new Error(`Location ID ${qrId} was not found.`);
+        }
 
-    orName.textContent = operatingRoom;
+        if (
+          !currentLocation.campus ||
+          !currentLocation.building ||
+          !currentLocation.or
+        ) {
+          throw new Error(
+            `Location ID ${qrId} is missing required information.`
+          );
+        }
 
-    machineInfo.textContent =
-      asset ? `${machine} • ${asset}` : machine;
+        const displayRoom = formatOperatingRoom(currentLocation.or);
+        const fullLocation =
+          `${currentLocation.campus} Campus, ` +
+          `${currentLocation.building}, ${displayRoom}`;
 
-    confirmationLocation.textContent =
-      asset
-        ? `${operatingRoom}, ${machine}, ${asset}`
-        : `${operatingRoom}, ${machine}`;
+        orName.textContent = displayRoom;
+        locationDetail.textContent =
+          `${currentLocation.campus} Campus • ` +
+          `${currentLocation.building}`;
+        confirmationLocation.textContent = fullLocation;
+
+        const formParameters = new URLSearchParams({
+          usp: "pp_url",
+          [FIELD_IDS.qrId]: qrId,
+          [FIELD_IDS.campus]: currentLocation.campus,
+          [FIELD_IDS.building]: currentLocation.building,
+          [FIELD_IDS.operatingRoom]: currentLocation.or
+        });
+
+        routineFormUrl =
+          `${FORM_URL}?${formParameters.toString()}`;
+
+        locationBox.hidden = false;
+        buttonStack.hidden = false;
+        instructions.hidden = false;
+      } catch (error) {
+        console.error("Page initialization error:", error);
+        pageError.textContent =
+          `${error.message} Please scan the QR code again or contact ` +
+          `Anesthesia Clinical Engineering.`;
+        pageError.style.display = "block";
+      }
+    }
 
     statButton.addEventListener("click", () => {
-      statButton.style.display = "none";
+      buttonStack.hidden = true;
       confirmation.style.display = "block";
-      instructions.style.display = "none";
+      instructions.hidden = true;
       confirmButton.focus();
+    });
+
+    routineButton.addEventListener("click", () => {
+      if (routineFormUrl) {
+        window.location.assign(routineFormUrl);
+      }
     });
 
     cancelButton.addEventListener("click", () => {
       confirmation.style.display = "none";
-      statButton.style.display = "block";
-      instructions.style.display = "block";
+      buttonStack.hidden = false;
+      instructions.hidden = false;
       statButton.focus();
     });
 
     confirmButton.addEventListener("click", sendStatRequest);
-
     resetButton.addEventListener("click", resetPage);
 
     async function sendStatRequest() {
@@ -417,6 +476,11 @@
 
       confirmation.style.display = "none";
       loading.style.display = "block";
+
+      const displayRoom = formatOperatingRoom(currentLocation.or);
+      const fullLocation =
+        `${currentLocation.campus} Campus, ` +
+        `${currentLocation.building}, ${displayRoom}`;
 
       const submittedDate = new Date();
 
@@ -441,9 +505,9 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            location: operatingRoom,
-            machine: machine,
-            asset: asset,
+            location: fullLocation,
+            machine: "Equipment not specified",
+            asset: "",
             priority: "STAT",
             localTimestamp: localTimestamp
           })
@@ -452,13 +516,10 @@
         const result = await response.json();
 
         if (!response.ok || !result.ok) {
-          throw new Error(
-            result.error || "STAT request failed"
-          );
+          throw new Error(result.error || "STAT request failed");
         }
 
         loading.style.display = "none";
-
         status.className = "status status-success";
         status.innerHTML = `
           <span class="success-icon">✓</span>
@@ -480,7 +541,6 @@
         console.error("STAT request error:", error);
 
         loading.style.display = "none";
-
         status.className = "status status-error";
         status.innerHTML = `
           The STAT request could not be confirmed.
@@ -502,9 +562,14 @@
       status.style.display = "none";
       resetButton.style.display = "none";
       confirmation.style.display = "none";
-      statButton.style.display = "block";
-      instructions.style.display = "block";
+      buttonStack.hidden = false;
+      instructions.hidden = false;
       statButton.focus();
+    }
+
+    function formatOperatingRoom(value) {
+      const text = String(value).trim();
+      return /^or\b/i.test(text) ? text : `OR ${text}`;
     }
 
     function escapeHtml(value) {
@@ -515,6 +580,8 @@
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
+
+    initializePage();
   </script>
 </body>
 </html>
