@@ -77,26 +77,62 @@
       font-size: 17px;
     }
 
-    .stat-button {
+    button {
       width: 100%;
-      min-height: 120px;
-      padding: 16px;
       border: 0;
       border-radius: 16px;
-      background: #b42318;
-      color: #ffffff;
-      font-size: 29px;
       font-weight: bold;
       cursor: pointer;
     }
 
-    .stat-button:active {
+    button:active {
       transform: scale(0.98);
     }
 
-    .stat-button:disabled {
-      background: #6b7280;
-      cursor: not-allowed;
+    .stat-button {
+      min-height: 120px;
+      padding: 16px;
+      background: #b42318;
+      color: #ffffff;
+      font-size: 29px;
+    }
+
+    .confirmation {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff7ed;
+      border: 2px solid #f97316;
+      border-radius: 16px;
+    }
+
+    .confirmation h2 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .confirmation-text {
+      margin: 0 0 18px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .confirm-button {
+      min-height: 88px;
+      padding: 14px;
+      background: #b42318;
+      color: #ffffff;
+      font-size: 24px;
+    }
+
+    .cancel-button {
+      min-height: 58px;
+      margin-top: 12px;
+      padding: 12px;
+      background: #e5e7eb;
+      color: #1f2937;
+      font-size: 18px;
     }
 
     .instructions {
@@ -110,12 +146,13 @@
     .status {
       display: none;
       margin-top: 20px;
-      padding: 16px;
+      padding: 18px;
       background: #dcfce7;
       color: #166534;
       border-radius: 12px;
       text-align: center;
       font-weight: bold;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -149,12 +186,43 @@
         🚨 SEND STAT
       </button>
 
-      <p class="instructions">
+      <div
+        class="confirmation"
+        id="confirmation"
+        role="dialog"
+        aria-labelledby="confirmationTitle"
+      >
+        <h2 id="confirmationTitle">Confirm STAT Request</h2>
+
+        <p class="confirmation-text">
+          Send an immediate anesthesia equipment support request for
+          <strong id="confirmationLocation">this location</strong>?
+        </p>
+
+        <button
+          class="confirm-button"
+          id="confirmButton"
+          type="button"
+        >
+          YES — SEND STAT
+        </button>
+
+        <button
+          class="cancel-button"
+          id="cancelButton"
+          type="button"
+        >
+          CANCEL
+        </button>
+      </div>
+
+      <p class="instructions" id="instructions">
         Press only when immediate anesthesia equipment support is required.
       </p>
 
       <div class="status" id="status" aria-live="polite">
-        Test successful. The STAT button was pressed.
+        Test successful.<br>
+        The STAT request was confirmed.
       </div>
     </section>
   </main>
@@ -171,20 +239,48 @@
     const asset =
       parameters.get("asset") || "";
 
-    document.getElementById("orName").textContent = operatingRoom;
-
-    document.getElementById("machineInfo").textContent =
-      asset ? `${machine} • ${asset}` : machine;
-
+    const orName = document.getElementById("orName");
+    const machineInfo = document.getElementById("machineInfo");
     const statButton = document.getElementById("statButton");
+    const confirmation = document.getElementById("confirmation");
+    const confirmationLocation =
+      document.getElementById("confirmationLocation");
+    const confirmButton = document.getElementById("confirmButton");
+    const cancelButton = document.getElementById("cancelButton");
+    const instructions = document.getElementById("instructions");
     const status = document.getElementById("status");
 
+    orName.textContent = operatingRoom;
+
+    machineInfo.textContent =
+      asset ? `${machine} • ${asset}` : machine;
+
+    confirmationLocation.textContent =
+      asset
+        ? `${operatingRoom}, ${machine}, ${asset}`
+        : `${operatingRoom}, ${machine}`;
+
     statButton.addEventListener("click", () => {
-      statButton.disabled = true;
-      statButton.textContent = "STAT BUTTON PRESSED";
+      statButton.style.display = "none";
+      confirmation.style.display = "block";
+      instructions.style.display = "none";
+      confirmButton.focus();
+    });
+
+    cancelButton.addEventListener("click", () => {
+      confirmation.style.display = "none";
+      statButton.style.display = "block";
+      instructions.style.display = "block";
+      statButton.focus();
+    });
+
+    confirmButton.addEventListener("click", () => {
+      confirmButton.disabled = true;
+      cancelButton.disabled = true;
+      confirmation.style.display = "none";
       status.style.display = "block";
     });
   </script>
 </body>
 </html>
-Create prototype STAT page
+Add STAT confirmation screen
