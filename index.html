@@ -89,6 +89,11 @@
       transform: scale(0.98);
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
     .stat-button {
       min-height: 120px;
       padding: 16px;
@@ -147,12 +152,37 @@
       display: none;
       margin-top: 20px;
       padding: 18px;
-      background: #dcfce7;
-      color: #166534;
       border-radius: 12px;
       text-align: center;
       font-weight: bold;
       line-height: 1.5;
+    }
+
+    .status-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .request-id {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: normal;
+    }
+
+    .reset-button {
+      display: none;
+      min-height: 58px;
+      margin-top: 14px;
+      padding: 12px;
+      background: #e5e7eb;
+      color: #1f2937;
+      font-size: 18px;
     }
   </style>
 </head>
@@ -161,7 +191,7 @@
   <main>
     <section class="panel">
       <div class="prototype">
-        PROTOTYPE — NO ALERT WILL BE SENT
+        PROTOTYPE SYSTEM
       </div>
 
       <h1>Anesthesia Equipment Support</h1>
@@ -191,12 +221,17 @@
         id="confirmation"
         role="dialog"
         aria-labelledby="confirmationTitle"
+        aria-modal="true"
       >
-        <h2 id="confirmationTitle">Confirm STAT Request</h2>
+        <h2 id="confirmationTitle">
+          Confirm STAT Request
+        </h2>
 
         <p class="confirmation-text">
           Send an immediate anesthesia equipment support request for
-          <strong id="confirmationLocation">this location</strong>?
+          <strong id="confirmationLocation">
+            this location
+          </strong>?
         </p>
 
         <button
@@ -220,15 +255,28 @@
         Press only when immediate anesthesia equipment support is required.
       </p>
 
-      <div class="status" id="status" aria-live="polite">
-        Test successful.<br>
-        The STAT request was confirmed.
-      </div>
+      <div
+        class="status"
+        id="status"
+        aria-live="polite"
+      ></div>
+
+      <button
+        class="reset-button"
+        id="resetButton"
+        type="button"
+      >
+        RETURN
+      </button>
     </section>
   </main>
 
   <script>
-    const parameters = new URLSearchParams(window.location.search);
+    const BACKEND_URL =
+      "https://anesce-stat-api.rbarker2.workers.dev/";
+
+    const parameters =
+      new URLSearchParams(window.location.search);
 
     const operatingRoom =
       parameters.get("or") || "Test OR";
@@ -239,16 +287,35 @@
     const asset =
       parameters.get("asset") || "";
 
-    const orName = document.getElementById("orName");
-    const machineInfo = document.getElementById("machineInfo");
-    const statButton = document.getElementById("statButton");
-    const confirmation = document.getElementById("confirmation");
+    const orName =
+      document.getElementById("orName");
+
+    const machineInfo =
+      document.getElementById("machineInfo");
+
+    const statButton =
+      document.getElementById("statButton");
+
+    const confirmation =
+      document.getElementById("confirmation");
+
     const confirmationLocation =
       document.getElementById("confirmationLocation");
-    const confirmButton = document.getElementById("confirmButton");
-    const cancelButton = document.getElementById("cancelButton");
-    const instructions = document.getElementById("instructions");
-    const status = document.getElementById("status");
+
+    const confirmButton =
+      document.getElementById("confirmButton");
+
+    const cancelButton =
+      document.getElementById("cancelButton");
+
+    const instructions =
+      document.getElementById("instructions");
+
+    const status =
+      document.getElementById("status");
+
+    const resetButton =
+      document.getElementById("resetButton");
 
     orName.textContent = operatingRoom;
 
@@ -274,13 +341,88 @@
       statButton.focus();
     });
 
-    confirmButton.addEventListener("click", () => {
+    confirmButton.addEventListener("click", sendStatRequest);
+
+    resetButton.addEventListener("click", resetPage);
+
+    async function sendStatRequest() {
       confirmButton.disabled = true;
       cancelButton.disabled = true;
+      confirmButton.textContent = "SENDING...";
+
+      try {
+        const response = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            location: operatingRoom,
+            machine: machine,
+            asset: asset,
+            priority: "STAT"
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.ok) {
+          throw new Error(
+            result.error || "STAT request failed"
+          );
+        }
+
+        confirmation.style.display = "none";
+
+        status.className = "status status-success";
+        status.innerHTML = `
+          STAT request sent successfully.
+          <span class="request-id">
+            Request ID: ${escapeHtml(result.requestId)}
+          </span>
+        `;
+        status.style.display = "block";
+        resetButton.style.display = "block";
+        resetButton.focus();
+      } catch (error) {
+        console.error("STAT request error:", error);
+
+        confirmation.style.display = "none";
+
+        status.className = "status status-error";
+        status.innerHTML = `
+          The STAT request could not be confirmed.
+          <br>
+          Please call Anesthesia Equipment Support directly.
+        `;
+        status.style.display = "block";
+        resetButton.style.display = "block";
+        resetButton.focus();
+      } finally {
+        confirmButton.disabled = false;
+        cancelButton.disabled = false;
+        confirmButton.textContent = "YES — SEND STAT";
+      }
+    }
+
+    function resetPage() {
+      status.style.display = "none";
+      resetButton.style.display = "none";
       confirmation.style.display = "none";
-      status.style.display = "block";
-    });
+      statButton.style.display = "block";
+      instructions.style.display = "block";
+      statButton.focus();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
   </script>
 </body>
 </html>
-Add STAT confirmation screen
+Connect STAT page to Cloudflare Worker
